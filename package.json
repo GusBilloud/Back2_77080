@@ -1,0 +1,29 @@
+{
+  "name": "back2_77080",
+  "version": "2.0.0",
+  "description": "Proyecto curso coder back2",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "author": "Gustavo Billoud",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GusBilloud/Back2_77080.git"
+  },
+  "bugs": {
+    "url": "https://github.com/GusBilloud/Back2_77080/issues"
+  },
+  "dependencies": {
+    "express": "5.2.1",
+    "mongoose": "9.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "3.1.11"
+  },
+  "homepage": "https://github.com/GusBilloud/Back2_77080#readme"
+}
