@@ -1,21 +1,11 @@
 import mongoose from "mongoose";
 
-export const connectMongoDB = async () => {
+export const connectAuto = async () => {
     try {
-        await mongoose.connect("mongodb://127.0.0.1:27017/back77080"),        
-        console.log("MongoDB conectado");
-    }catch (err) {
-        console.error("MongoDB error de conexion:", err);
-        process.exit(1);
-    }
-};
-
-export const connectMongoAtlas = async () => {
-    try {
-        await mongoose.connect("mongodb://127.0.0.1:27017/back77080"),        
-        console.log("MongoAtlas conectado");
-    }catch (err) {
-        console.error("MongoAtlas error de conexion:", err);
+        await mongoose.connect(process.env.MONGO_URI);
+        console.log("MongoDB connected successfully");
+    } catch (err) {
+        console.error("Failed to connect to MongoDB:", err);
         process.exit(1);
     }
 };
