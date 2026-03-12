@@ -1,130 +1,138 @@
 import { Router } from "express";
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import passport from "passport";
-import { UserModel } from "../config/models/user.model.js";
-import { CartModel } from "../config/models/cart.model.js";
+import SessionsService from "../services/sessions.service.js";
 
 const router = Router();
+const sessionsService = new SessionsService();
+const COOKIE_NAME = process.env.JWT_COOKIE_NAME || "access_token";
 
-function createHash(password) {
-    return bcrypt.hashSync(password, bcrypt.genSaltSync(10));
-}
-
-function isValidPassword(user, password) {
-    return bcrypt.compareSync(password, user.password);
-}
-
-function generateToken(payload) {
-    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
-}
-
-router.post("/register", async (req, res, next) => {
+router.post("/register", async (req, res) => {
     try {
-        const { first_name, last_name, email, age, password } = req.body;
-
-        if (!first_name || !last_name || !email || !password || !age) {
-            return res.status(400).json({ error: "All fields are required" });
-        }
-
-        const exist = await UserModel.findOne({ email });
-        if (exist) return res.status(400).json({ error: `The email ${email} already exists` });
-
-        const cartCreated = await CartModel.create({ products: [] });
-        const userCreated = await UserModel.create({
-            first_name,
-            last_name,
-            email,
-            age,
-            password: createHash(password),
-            role: "user",
-            cart: cartCreated._id,
-        });
-
-        const token = generateToken({
-            id: userCreated._id,
-            email: userCreated.email,
-            role: userCreated.role,
-        });
-
-        const cookieName = process.env.JWT_COOKIE_NAME || "access_token";
-
-        res.cookie(cookieName, token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            maxAge: Number(process.env.JWT_COOKIE_MAX_AGE || 60 * 60 * 1000),
-        });
-
+        const userCreated = await sessionsService.register(req.body);
+        const safeUser = sessionsService.getSafeUser(userCreated);
         return res.status(201).json({
             status: "success",
             message: "User registered successfully",
-            payload: {
-                id: userCreated._id,
-                first_name: userCreated.first_name,
-                last_name: userCreated.last_name,
-                email: userCreated.email,
-                age: userCreated.age,
-                role: userCreated.role,
-                cart: userCreated.cart,
-            },
+            payload: safeUser
         });
     } catch (error) {
-        next(error);
-    }
+        const status = error.statusCode || 500;
+        return res.status(status).json({
+            status: "error",
+            error: error.message || "Server error",
+        });
+    } 
 });
 
-router.post(
-    "/login",
-    passport.authenticate("local", { session: false }),
-    (req, res) => {
+router.post("/login", passport.authenticate("login", { session: false }), async (req, res) => {
+    try {
         const user = req.user;
 
-        const token = generateToken({
-            id: user._id,
-            email: user.email,
-            role: user.role,
-        });
+        const token = jwt.sign(
+            {
+                id: user._id,
+                email: user.email,
+                role: user.role,
+                cart: user.cart,
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN }
+        );
 
-        const cookieName = process.env.JWT_COOKIE_NAME || "access_token";
-
-        res.cookie(cookieName, token, {
+        res.cookie(COOKIE_NAME, token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            maxAge: Number(process.env.JWT_COOKIE_MAX_AGE || 60 * 60 * 1000),
+            maxAge: Number(process.env.JWT_COOKIE_MAX_AGE) || 3600000,
         });
 
         return res.status(200).json({
             status: "success",
             message: "Login successful",
-            payload: {
-                id: user._id,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                email: user.email,
-                age: user.age,
-                role: user.role,
-            },
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: "error",
+            error: error.message || "Server error",
         });
     }
-);
-
-router.get("/logout", (req, res) => {
-    const cookieName = process.env.JWT_COOKIE_NAME || "access_token";
-    res.clearCookie(cookieName);
-    return res.status(200).json({ status: "success", message: "Logout successful" });
 });
 
 router.get(
     "/current",
     passport.authenticate("current", { session: false }),
-    (req, res) => {
-        return res.status(200).json({
-            status: "success",
-            payload: req.user,
-        });
+    async (req, res) => {
+        try {
+            const currentUser = sessionsService.getCurrentUserDTO(req.user);
+
+            return res.status(200).json({
+                status: "success",
+                payload: currentUser,
+            });
+        } catch (error) {
+            const status = error.statusCode || 500;
+
+            return res.status(status).json({
+                status: "error",
+                error: error.message || "Server error",
+            });
+        }
     }
 );
+
+router.post("/logout", (req, res) => {
+    try {
+        const result = sessionsService.logout();
+
+        res.clearCookie(COOKIE_NAME);
+
+        return res.status(200).json({
+            status: "success",
+            message: result.message,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: "error",
+            error: error.message || "Server error",
+        });
+    }
+});
+
+router.post("/forgot-password", async (req, res) => {
+    try {
+        const { email } = req.body;
+        const result = await sessionsService.forgotPassword(email);
+        
+        return res.status(200).json({
+            status: "success",
+            message: result.message,
+        });
+    } catch (error) {
+        const status = error.statusCode || 500;
+        return res.status(status).json({
+            status: "error",
+            error: error.message || "Server error",
+        });
+    }
+});
+
+router.post("/reset-password", async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+        const result = await sessionsService.resetPassword(token, newPassword);
+        
+        return res.status(200).json({
+            status: "success",
+            message: result.message,
+        });
+    } catch (error) {
+        const status = error.statusCode || 500;
+        return res.status(status).json({
+            status: "error",
+            error: error.message || "Server error",
+        });
+    }
+});
+
+
 
 export default router;

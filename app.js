@@ -1,29 +1,22 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
-
 import express from 'express';
-
 import cookieParser from 'cookie-parser';
+import dotenv from 'dotenv';
 import passport from 'passport';
 
 import { connectAuto } from './config/db/connect.config.js';
 import initializePassport from './config/auth/passport.config.js';
 
-//import authRouter from './routes/auth.router.js';
 import productsRouter from './routes/products.router.js';
 import profileRouter from './routes/profile.router.js';
-import homeRouter from './routes/home.router.js';
+import cartsRouter from './routes/carts.router.js';
 import sessionRouter from './routes/sessions.router.js';
 import userRouter from './routes/users.router.js';
 
-
+dotenv.config();
 
 
 const app = express();
 const PORT = process.env.PORT || 8000;
-
-//const SECRET_SESSION = process.env.SECRET_SESSION || 'clave_secreta';
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -32,12 +25,10 @@ app.use(cookieParser());
 initializePassport();
 app.use(passport.initialize());
 
-app.use("/", homeRouter);
-//app.use("/api/auth", authRouter);
+app.use("/api/carts", cartsRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/sessions", sessionRouter);
-
 app.use("/api/users", userRouter);
 
 app.use((req, res) => {

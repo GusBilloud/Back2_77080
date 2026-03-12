@@ -1,87 +1,137 @@
 import { Router } from "express";
-import { Product } from "../config/models/product.model.js";
-import mongoose from "mongoose";
+import passport from "passport";
+import ProductsService from "../services/products.service.js";
+import { authorizeRoles } from "../middleware/auth.middleware.js";
 
 const router = Router();
+const productsService = new ProductsService();
 
+// GET todos los productos
 router.get("/", async (req, res) => {
     try {
-        const products = await Product.find();
-        return res.status(200).json({ products });
-    } catch (error) {
-        return res.status(500).json({ error: "Server error" });
-    }
-});
+        const result = await productsService.getAll();
 
-router.post("/", async (req, res) => {
-    try {
-        const { name, price, description, inStock } = req.body;
-
-        if (!name || !price || !description) {
-            return res.status(400).json({ error: "All fields are required" });
-        }
-
-        const newProduct = await Product.create({ name, price, description, inStock });
-
-        return res.status(201).json({ message: "Product created", product: newProduct });
-    } catch (error) {
-        return res.status(500).json({ error: "Server error" });
-    }
-});
-
-router.get("/:id", async (req, res) => {
-    try {
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({ error: "Invalid ID" });
-        }
-
-        const product = await Product.findById(req.params.id);
-        if (!product) {
-            return res.status(404).json({ error: `Product with ID ${req.params.id} does not exist` });
-        }
-
-        return res.status(200).json({ product });
-    } catch (error) {
-        return res.status(500).json({ error: "Server error" });
-    }
-});
-
-router.put("/:id", async (req, res) => {
-    try {
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({ error: "Invalid ID" });
-        }
-
-        const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
-            runValidators: true,
+        return res.status(200).json({
+            status: "success",
+            payload: result,
         });
-
-        if (!product) {
-            return res.status(404).json({ error: `Product with ID ${req.params.id} does not exist` });
-        }
-
-        return res.status(200).json({ message: "Product updated", product });
     } catch (error) {
-        return res.status(500).json({ error: "Server error" });
+        return res.status(500).json({
+            status: "error",
+            error: error.message || "Server error",
+        });
     }
 });
 
-router.delete("/:id", async (req, res) => {
+// GET producto por id
+router.get("/:pid", async (req, res) => {
     try {
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({ error: "Invalid ID" });
-        }
+        const { pid } = req.params;
 
-        const product = await Product.findByIdAndDelete(req.params.id);
+        const product = await productsService.getProductById(pid);
+
         if (!product) {
-            return res.status(404).json({ error: `Product with ID ${req.params.id} does not exist` });
+            return res.status(404).json({
+                status: "error",
+                error: "Product not found",
+            });
         }
 
-        return res.sendStatus(204);
+        return res.status(200).json({
+            status: "success",
+            payload: product,
+        });
     } catch (error) {
-        return res.status(500).json({ error: "Server error" });
+        return res.status(500).json({
+            status: "error",
+            error: error.message || "Server error",
+        });
     }
 });
+
+// POST crear producto - solo admin
+router.post(
+    "/",
+    passport.authenticate("current", { session: false }),
+    authorizeRoles("admin"),
+    async (req, res) => {
+        try {
+            const newProduct = await productsService.createProduct(req.body);
+
+            return res.status(201).json({
+                status: "success",
+                payload: newProduct,
+            });
+        } catch (error) {
+            return res.status(500).json({
+                status: "error",
+                error: error.message || "Server error",
+            });
+        }
+    }
+);
+
+// PUT actualizar producto - solo admin
+router.put(
+    "/:pid",
+    passport.authenticate("current", { session: false }),
+    authorizeRoles("admin"),
+    async (req, res) => {
+        try {
+            const { pid } = req.params;
+
+            const updatedProduct = await productsService.updateProduct(pid, req.body);
+
+            if (!updatedProduct) {
+                return res.status(404).json({
+                    status: "error",
+                    error: "Product not found",
+                });
+            }
+
+            return res.status(200).json({
+                status: "success",
+                payload: updatedProduct,
+            });
+        } catch (error) {
+            return res.status(500).json({
+                status: "error",
+                error: error.message || "Server error",
+            });
+        }
+    }
+);
+
+// DELETE eliminar producto - solo admin
+router.delete(
+    "/:pid",
+    passport.authenticate("current", { session: false }),
+    authorizeRoles("admin"),
+    async (req, res) => {
+        try {
+            const { pid } = req.params;
+
+            const deletedProduct = await productsService.deleteProduct(pid);
+
+            if (!deletedProduct) {
+                return res.status(404).json({
+                    status: "error",
+                    error: "Product not found",
+                });
+            }
+
+            return res.status(200).json({
+                status: "success",
+                message: "Product deleted successfully",
+                payload: deletedProduct,
+            });
+        } catch (error) {
+            return res.status(500).json({
+                status: "error",
+                error: error.message || "Server error",
+            });
+        }
+    }
+);
 
 export default router;

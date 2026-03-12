@@ -2,53 +2,37 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt";
 import bcrypt from "bcrypt";
-import { UserModel } from "../models/user.model.js";
+import UsersRepository from "../../repositories/users.repository.js";
 
+const usersRepository = new UsersRepository();
+const COOKIE_NAME = process.env.JWT_COOKIE_NAME || "access_token";
 
 function cookieExtractor(req) {
-    const cookieName = process.env.JWT_COOKIE_NAME || "access_token";
-    return req?.cookies?.[cookieName] || null;
+    return req?.cookies?.[COOKIE_NAME] || null;
 }
 
 export default function initializePassport() {
-
     passport.use(
-        "local",
+        "login",
         new LocalStrategy(
             { usernameField: "email", passwordField: "password" },
             async (email, password, done) => {
                 try {
-                    const user = await UserModel.findOne({ email });
-                    if (!user) return done(null, false, { message: "User not found" });
+                    const user = await usersRepository.getByEmail(email);
 
-                    const ok = bcrypt.compareSync(password, user.password);
-                    if (!ok) return done(null, false, { message: "Incorrect password" });
+                    if (!user) {
+                        return done(null, false, { message: "User not found" });
+                    }
+
+                    const isValid = bcrypt.compareSync(password, user.password);
+
+                    if (!isValid) {
+                        return done(null, false, { message: "Incorrect password" });
+                    }
 
                     return done(null, user);
-                } catch (err) {
-                    return done(err);
-                }
-            }
-        )
-    );
-
-
-    passport.use(
-        "jwt",
-        new JwtStrategy(
-            {
-                jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractor]),
-                secretOrKey: process.env.JWT_SECRET,
-            },
-            async (jwtPayload, done) => {
-                try {
-
-                    const user = await UserModel.findById(jwtPayload.id).select("-password");
-
-                    if (!user) return done(null, false);
-                    return done(null, user);
-                } catch (err) {
-                    return done(err, false);
+                } catch (error) {
+                    return done(error);
                 }
             }
         )
@@ -63,14 +47,17 @@ export default function initializePassport() {
             },
             async (jwtPayload, done) => {
                 try {
-                    const user = await UserModel.findById(jwtPayload.id).select("-password");
-                    if (!user) return done(null, false);
+                    const user = await usersRepository.getById(jwtPayload.id);
+
+                    if (!user) {
+                        return done(null, false);
+                    }
+
                     return done(null, user);
-                } catch (err) {
-                    return done(err, false);
+                } catch (error) {
+                    return done(error, false);
                 }
             }
         )
     );
 }
-

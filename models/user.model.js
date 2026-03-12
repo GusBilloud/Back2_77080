@@ -14,7 +14,8 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true,
         trim: true,
-        lowercase: true
+        lowercase: true,
+        match: [/^\S+@\S+\.\S+$/, 'Email inválido']
     },
     password: {
         type: String,
@@ -22,7 +23,9 @@ const userSchema = new mongoose.Schema({
     },
     age: {
         type: Number,
-        required: true
+        required: true,
+        min: 0,
+        max: 110
     },
     role: {
         type: String,
