@@ -14,7 +14,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"first_name\": \"Juan\",\n  \"last_name\": \"Perez\",\n  \"email\": \"juan@test.com\",\n  \"age\": 30,\n  \"password\": \"123456\"\n}",
+					"raw": "{\n  \"first_name\": \"Jesica\",\n  \"last_name\": \"Kloster\",\n  \"email\": \"user1@mail.com\",\n  \"age\": 30,\n  \"password\": \"1234567\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -42,7 +42,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"email\": \"juan@test.com\",\n  \"password\": \"123456\"\n}",
+					"raw": "{\n  \"email\": \"admin@mail.com\",\n  \"password\": \"123456\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -73,17 +73,17 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"email\": \"juan@test.com\",\n  \"password\": \"123456\"\n}"
+					"raw": "\n"
 				},
 				"url": {
-					"raw": "{{base_url}}/api/sessions/",
+					"raw": "{{base_url}}/api/sessions/current",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
 						"api",
 						"sessions",
-						""
+						"current"
 					]
 				}
 			},
@@ -141,10 +141,181 @@
 			"response": []
 		},
 		{
-			"name": "New Request",
+			"name": "Crear_Prod",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Camisas\",\n  \"description\": \"Blancas\",\n  \"price\": 100,\n  \"stock\": 10\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/products",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"products"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Cart",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
 			"request": {
 				"method": "GET",
-				"header": []
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "\n"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/carts/:cid",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"carts",
+						":cid"
+					],
+					"variable": [
+						{
+							"key": "cid",
+							"value": "69b3452dbb94580693a45bcc"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Agregar_a_cart",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"email\": \"admin@mail.com\",\n  \"password\": \"123456\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/carts/:cid/products/:pid",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"carts",
+						":cid",
+						"products",
+						":pid"
+					],
+					"variable": [
+						{
+							"key": "cid",
+							"value": "69b3452dbb94580693a45bcc"
+						},
+						{
+							"key": "pid",
+							"value": "69b3402fbb94580693a45bc6"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Modificar_prod",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"price\": 180\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/products/{{pid}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"products",
+						"{{pid}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Comprar",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"email\": \"admin@mail.com\",\n  \"password\": \"123456\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/carts/{{cid}}/purchase",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"carts",
+						"{{cid}}",
+						"purchase"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Borrar_prod",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"price\": 300\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/products/{{pid}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"products",
+						"{{pid}}"
+					]
+				}
 			},
 			"response": []
 		}
