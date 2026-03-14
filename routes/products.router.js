@@ -6,7 +6,6 @@ import { authorizeRoles } from "../middleware/auth.middleware.js";
 const router = Router();
 const productsService = new ProductsService();
 
-// GET todos los productos
 router.get("/", async (req, res) => {
     try {
         const result = await productsService.getAll();
@@ -23,7 +22,6 @@ router.get("/", async (req, res) => {
     }
 });
 
-// GET producto por id
 router.get("/:pid", async (req, res) => {
     try {
         const { pid } = req.params;
@@ -49,7 +47,6 @@ router.get("/:pid", async (req, res) => {
     }
 });
 
-// POST crear producto - solo admin
 router.post(
     "/",
     passport.authenticate("current", { session: false }),
@@ -71,7 +68,6 @@ router.post(
     }
 );
 
-// PUT actualizar producto - solo admin
 router.put(
     "/:pid",
     passport.authenticate("current", { session: false }),
@@ -102,7 +98,6 @@ router.put(
     }
 );
 
-// DELETE eliminar producto - solo admin
 router.delete(
     "/:pid",
     passport.authenticate("current", { session: false }),

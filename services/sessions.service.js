@@ -47,7 +47,6 @@ export default class SessionsService {
         return new CurrentUserDTO(user);
     };
 
-    // Alias por si en algún lado quedó escrito con minúscula
     getsafeUser = (user) => {
         return this.getSafeUser(user);
     };
